@@ -20,14 +20,17 @@ func main() {
 	proxy.OnRequest().DoFunc(
 		func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 			//请求事件代码
+			//此处可修改请求头和信息
 			return req, nil
 		})
 
 	proxy.OnResponse().DoFunc(
 		func(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 			//响应事件代码
+			//此处可修改响应头和信息
 			bs, _ := ioutil.ReadAll(res.Body)
 			tmpstr := string(bs)
+			//修改 HTTP Body
 			newbody := HandleBody(res, &tmpstr)
 			res.Body = ioutil.NopCloser(bytes.NewReader([]byte(*newbody)))
 			return res
