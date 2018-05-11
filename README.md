@@ -15,6 +15,14 @@
 
 <br>
 
+
+需求库
+---------
+需要 `goproxy` 库，请执行
+> go get https://github.com/elazarl/goproxy
+
+<br>
+
 如何使用
 ---------
 十分简单，仅有一个`go`文件，下载之后直接 `go run ./main.go` 即可；
