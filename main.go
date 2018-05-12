@@ -2,23 +2,38 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/elazarl/goproxy"
 )
 
+func debug() {
+
+}
+
 //Start...
 func main() {
+
 	//goproxy
 	proxy := goproxy.NewProxyHttpServer()
-	proxy.Verbose = true
+	proxy.Verbose = false
+
+	//匹配
+	hostmatch := flag.String("hostmatch", "^.*$", "hosts to trace (regexp pattern)")
+	flag.Parse()
+
+	proxy.OnRequest(goproxy.ReqHostMatches(regexp.MustCompile(*hostmatch))).
+		HandleConnect(goproxy.AlwaysMitm)
 
 	proxy.OnRequest().DoFunc(
 		func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+			fmt.Println("[OnRequest]", req.Host, req.RequestURI)
 			//请求事件代码
 			//此处可修改请求头和信息
 			return req, nil
@@ -32,7 +47,10 @@ func main() {
 			tmpstr := string(bs)
 			//修改 HTTP Body
 			newbody := HandleBody(res, &tmpstr)
+
 			res.Body = ioutil.NopCloser(bytes.NewReader([]byte(*newbody)))
+
+			// fmt.Println("[OnResponse]", res.Request.Host)
 			return res
 		})
 
@@ -45,12 +63,11 @@ func HandleBody(res *http.Response, body *string) *string {
 	host := res.Request.Host
 	realDir := FindRealDir(host)
 	if realDir == "" {
-		fmt.Println("Not Find Script:", host)
 		return body
 	}
 	//插入指定目录的 JavaScript 到网页的最后
 	includePath := "./" + realDir + "/" + "include.js"
-	fmt.Println("HandleBody Host:", host, " Include Loacl Script:", includePath)
+	fmt.Println("[HandleBody] Host:", host, " Include Loacl Script:", includePath)
 	b, _ := ioutil.ReadFile(includePath)
 	jsfilestring := string(b)
 	restr := "\n\n<!-- Include Script -->\n <script>" + jsfilestring + "</script>\n <!-- Include Script End--> \n</html>"
